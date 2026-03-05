@@ -35,4 +35,11 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
+// Seed database ved oppstart
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<BethanysPieShopDbContext>();
+    DbInitializer.Seed(context);
+}
+
 app.Run();
