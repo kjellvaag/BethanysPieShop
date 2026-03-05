@@ -56,7 +56,12 @@ TestResults/
 [Tt]est[Rr]esult*/
 coverage*/
 
-## Misc
+## Misc / Temp files
 *.log
 nul
 excalidraw.log
+*.tmp
+*.temp
+*~
+.#*
+#*#
