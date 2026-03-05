@@ -99,8 +99,44 @@ context.Pies.AddRange(/* 16 pies fra modul 06 */);
 - ✅ **Alle 56 tester bestått**
 - ✅ **Database seed fungerer** ved hver oppstart
 - ✅ **Routing og navigasjon** fungerer med nytt datasett
+- ✅ **CategoryId mismatch fikset** - Dictionary-referanser erstattet med lokale variabler
+- ✅ **Routing og navigasjon** fungerer med nytt datasett
 
 ### Læringspunkter
+- **Entity Framework seed strategier**: `EnsureCreated()` vs `RemoveRange()`
+- **SQL Server LocalDB**: Ikke .db filer, men `(localdb)\mssqllocaldb`  
+- **Dictionary pattern** for kategorireferanser i seed data
+  - **Problem**: `Categories["name"]` skaper Category objekter med CategoryId = 0
+  - **Løsning**: Bruk lokale variabler som refererer til faktiske DB-genererte IDer
+- **MERGE statements**: EF Core genererer effektive bulk inserts
+- **Migrasjoner vs EnsureCreated**: `Migrate()` gir synlig migrasjonshistorikk
+
+## ✅ Fase 5: Modul 6 - Routing og Navigasjon **FULLFØRT**
+
+**Mål**: Implementere komplett routing og navigasjon fra ASP.NET Core 6 fundamentals modul 06.
+
+### Oppnådd
+1. **Full modul 6-implementasjon**: Routes, navigasjon og omfattende seed data
+2. **PieController**: Implementert med List() og Details(int id) actions
+3. **Views**: Bootstrap-responsive views for pie listing og details
+4. **Routing**: Alle routes verifisert (navbar, hjemside, list navigasjon, tilbake-knapper)
+5. **Seed Data Migration**: 16 omfattende pies fra modul 06 erstatter 5 originale
+6. **Migration System**: Endret fra `EnsureCreated()` til `Migrate()` for riktig migrasjonshistorikk
+7. **Database**: 16 pies og 3 kategorier korrekt seeded med synlig migrasjonshistorikk
+8. **CategoryId Fix**: Dictionary-referanser erstattet med lokale category-variabler
+9. **Testing**: Alle 56 tester består konsistent
+10. **Dokumentasjon**: Kjørebok oppdatert med fullstendige detaljer
+
+### Tekniske detaljer
+- **16 pies** across 3 categories: Fruit pies, Cheese cakes, Seasonal pies
+- **Alle routes fungerer**: `/`, `/Pie/List`, `/Pie/Details/{id}`
+- **Navigation flows**: Home → List → Details → Back to List
+- **Database**: `BethanysPieShopDb` på SQL Server LocalDB
+- **Migrations**: `InitialCreate`, `RemoveSeedData` anvendt
+- **CategoryIds**: 4 (Fruit pies), 5 (Cheese cakes), 6 (Seasonal pies)
+
+### Neste steg
+Nå er prosjektet klart for **Fase 6: Shopping cart** fra kursets neste modul.
 - **Entity Framework seed strategier**: `EnsureCreated()` vs `RemoveRange()`
 - **SQL Server LocalDB**: Ikke .db filer, men `(localdb)\mssqllocaldb`
 - **Dictionary pattern** for kategorireferanser i seed data
