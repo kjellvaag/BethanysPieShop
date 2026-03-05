@@ -20,11 +20,16 @@ Brukeren (kvage) er fersk i både .NET og Git og ønsker å lære underveis.
 ## Prosjektstruktur
 
 ```
-├── BethanysPieShop.slnx            ← Solution (NET 8, låst via global.json)
-├── src/BethanysPieShop/            ← ASP.NET Core MVC web-app
-├── tests/BethanysPieShop.Tests/    ← xUnit testprosjekt
-├── docs/kjorebok.md                ← Læringslogg med alle forklaringer
-├── oh-my-opencode.json             ← Lokal modellkonfig (billige modeller)
+├── BethanysPieShop.sln              ← Solution-fil (samler alle prosjekter)
+├── BethanysPieShop.csproj           ← ASP.NET Core MVC web-app (på root-nivå)
+├── Tests/                           ← xUnit testprosjekt
+│   ├── BethanysPieShop.Tests.csproj
+│   └── UnitTest1.cs
+├── Controllers/, Models/, Views/    ← MVC-komponenter på root-nivå
+├── wwwroot/, Properties/           ← Web-ressurser på root-nivå
+├── Program.cs, appsettings.json    ← App-konfigurasjon på root-nivå
+├── docs/kjorebok.md                 ← Læringslogg med alle forklaringer
+├── .opencode/oh-my-opencode.json   ← Lokal modellkonfig (billige modeller)
 └── global.json                     ← Låser .NET SDK til 8.0.x
 ```
 

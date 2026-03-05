@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\BethanysPieShop\BethanysPieShop.csproj" />
+    <ProjectReference Include="..\BethanysPieShop.csproj" />
   </ItemGroup>
 
 </Project>

@@ -65,30 +65,27 @@ Tenk på det som å pakke en pakke: Du velger hva som skal i pakken (`add`), og 
 BethanysPieShop/
 ├── .gitignore                  ← Filer git skal ignorere (bin/, obj/, .vs/)
 ├── global.json                 ← Låser .NET SDK til versjon 8
-├── BethanysPieShop.slnx        ← Solution-fil (samler alle prosjekter)
+├── BethanysPieShop.sln         ← Solution-fil (samler alle prosjekter)
 │
-├── src/
-│   └── BethanysPieShop/        ← Web-applikasjonen (MVC)
-│       ├── Controllers/        ← Håndterer HTTP-requests (C#)
-│       ├── Models/             ← Datamodeller (C# klasser)
-│       ├── Views/              ← HTML-sider (Razor .cshtml)
-│       │   ├── Home/           ← Views for HomeController
-│       │   └── Shared/         ← Delte views (_Layout, _Error)
-│       ├── wwwroot/            ← Statiske filer (CSS, JS, bilder)
-│       ├── Program.cs          ← Oppstart og konfigurasjon
-│       └── appsettings.json    ← App-konfigurasjon
+├── BethanysPieShop/            ← Web-applikasjonen (MVC)
+│   ├── Controllers/        ← Håndterer HTTP-requests (C#)
+│   ├── Models/             ← Datamodeller (C# klasser)
+│   ├── Views/              ← HTML-sider (Razor .cshtml)
+│   │   ├── Home/           ← Views for HomeController
+│   │   └── Shared/         ← Delte views (_Layout, _Error)
+│   ├── wwwroot/            ← Statiske filer (CSS, JS, bilder)
+│   ├── Program.cs          ← Oppstart og konfigurasjon
+│   └── appsettings.json    ← App-konfigurasjon
 │
-└── tests/
-    └── BethanysPieShop.Tests/  ← Unit tests (xUnit, TDD)
+└── BethanysPieShop.Tests/      ← Unit tests (xUnit, TDD)
 ```
 
 ### Hvorfor denne strukturen?
 
-- **`src/` og `tests/`** — Skiller produksjonskode fra testkode
-- **Solution-filen (.slnx)** — Samler alle prosjekter slik at IDE-en (Visual Studio / Rider) kan åpne alt på én gang
+- **Prosjektnavnene skiller** — `BethanysPieShop` vs `BethanysPieShop.Tests` gjør `src/` og `tests/` overflødige
+- **Solution-filen (.sln)** — Samler alle prosjekter slik at IDE-en (Visual Studio / Rider) kan åpne alt på én gang
 - **global.json** — Sikrer at alle som jobber med prosjektet bruker samme .NET SDK-versjon
 - **`.gitignore`** — Hindrer at byggefiler (`bin/`, `obj/`), IDE-filer (`.vs/`) og andre genererte filer spores i git
-
 ---
 
 ## ASP.NET Core MVC — Oversikt
