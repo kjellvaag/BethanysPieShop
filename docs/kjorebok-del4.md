@@ -498,4 +498,255 @@ Passed!  - Failed: 0, Passed: 56, Skipped: 0, Total: 56
 
 **📍 Neste:** Vi fortsetter med shopping cart-funksjonalitet som nå kan lagres i database i stedet for session.
 
+---
+
+## 🔧 DbInitializer - Runtime Seeding (Alternativ til Migration-basert Seeding)
+
+### Problemstilling: Migration-basert Seeding
+
+Opprinnelig brukte vi `OnModelCreating` i `BethanysPieShopDbContext` for å seede testdata:
+
+```csharp
+// I BethanysPieShopDbContext.OnModelCreating
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    // Seed kategorier
+    modelBuilder.Entity<Category>().HasData(
+        new Category { CategoryId = 1, CategoryName = "Fruit pies" },
+        // ... flere kategorier
+    );
+
+    // Seed pies
+    modelBuilder.Entity<Pie>().HasData(
+        new Pie { PieId = 1, Name = "Apple Pie", CategoryId = 1 },
+        // ... flere pies
+    );
+}
+```
+
+**❌ Problemer med denne tilnærmingen:**
+- **Migrasjoner blir rotete** — Schema og data blandes sammen
+- **Dårlig separasjon av ansvarsområder** — Strukturendringer og testdata kobles
+- **Vanskelig å vedlikeholde** — Seeding-kode blir del av database-skjema
+- **MERGE statement-problemer** — Foreign key constraints kan feile
+- **Hardkodede IDs** — Krever manuell ID-administrasjon
+
+### Løsning: DbInitializer-klassen
+
+En **statisk klasse** som håndterer seeding ved **runtime** i stedet for i migrasjoner:
+
+```csharp
+// Models/DbInitializer.cs
+public static class DbInitializer
+{
+    /// <summary>
+    /// Seeder databasen med initial data hvis den er tom
+    /// Kalles fra Program.cs ved oppstart
+    /// </summary>
+    public static void Seed(BethanysPieShopDbContext context)
+    {
+        // Sørg for at databasen er opprettet
+        context.Database.EnsureCreated();
+
+        // Sjekk om vi allerede har data (unngå duplikater)
+        if (context.Categories.Any())
+        {
+            return; // Database er allerede seeded
+        }
+
+        // Seed kategorier FØRST
+        var fruitPiesCategory = new Category
+        {
+            CategoryName = "Fruit pies",
+            Description = "Delicious fruit-based pies"
+        };
+        var cheeseCakesCategory = new Category
+        {
+            CategoryName = "Cheese cakes",
+            Description = "Rich and creamy cheesecakes"
+        };
+        var seasonalPiesCategory = new Category
+        {
+            CategoryName = "Seasonal pies",
+            Description = "Pies that match the current season"
+        };
+
+        context.Categories.AddRange(fruitPiesCategory, cheeseCakesCategory, seasonalPiesCategory);
+        context.SaveChanges(); // ⚡ KRITISK: Generer CategoryIds
+
+        // Seed pies ETTER kategorier (foreign key dependencies)
+        var pies = new Pie[]
+        {
+            new Pie
+            {
+                Name = "Apple Pie",
+                Price = 12.95M,
+                ShortDescription = "Our famous apple pie",
+                CategoryId = fruitPiesCategory.CategoryId, // ✅ Bruk generert ID
+                ImageUrl = "https://gillcleerenpluralsight.blob.core.windows.net/files/applepie.jpg",
+                InStock = true,
+                IsPieOfTheWeek = true
+            },
+            // ... flere pies med dynamiske CategoryId-referanser
+        };
+
+        context.Pies.AddRange(pies);
+        context.SaveChanges();
+    }
+}
+```
+
+### Integrering i Program.cs
+
+```csharp
+// Program.cs - etter app.Build() men før app.Run()
+
+// Seed database ved oppstart
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<BethanysPieShopDbContext>();
+    DbInitializer.Seed(context);
+}
+
+app.Run();
+```
+
+### 🔑 Kritiske læringsmomenter
+
+#### 1. Foreign Key Dependencies og EF Core Identity Generation
+
+**❌ FEIL tilnærming:**
+```csharp
+// Hardkodede CategoryIds - kan feile!
+new Pie { CategoryId = 1, Name = "Apple Pie" },
+new Pie { CategoryId = 2, Name = "Cheesecake" }
+```
+
+**✅ RIKTIG tilnærming:**
+```csharp
+// 1. Opprett parent entities
+var fruitCategory = new Category { CategoryName = "Fruit pies" };
+context.Categories.AddRange(fruitCategory, cheeseCategory);
+
+// 2. Save for å generere auto-increment IDs
+context.SaveChanges(); // CategoryIds blir nå tilgjengelige!
+
+// 3. Bruk genererte IDs i child entities
+var pie = new Pie { CategoryId = fruitCategory.CategoryId }; // Faktisk generert ID
+```
+
+**Hvorfor dette er kritisk:**
+- EF Core's **IDENTITY** kolonner genereres av databasen
+- Auto-generated verdier er **ikke tilgjengelige før SaveChanges()**
+- Hardkodede IDs kan kollidere med database's identity generation
+- Foreign key constraints krever **eksisterende** parent records
+
+#### 2. Duplikatsjekking
+
+```csharp
+// Unngå re-seeding ved gjentatte oppstarter
+if (context.Categories.Any())
+{
+    return; // Database allerede seeded
+}
+```
+
+**Alternativer for mer sofistikert sjekking:**
+- Sjekk på specific seed-data: `context.Categories.Any(c => c.CategoryName == "Fruit pies")`
+- Bruke environment-basert seeding: `if (app.Environment.IsDevelopment())`
+- Version-basert seeding med metadata-tabell
+
+### Migrering fra OnModelCreating til DbInitializer
+
+**Steg 1: Opprett DbInitializer**
+```bash
+# Opprett ny fil
+touch Models/DbInitializer.cs
+```
+
+**Steg 2: Fjern seed-data fra DbContext**
+```csharp
+// Før: Masse HasData() calls i OnModelCreating
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    // modelBuilder.Entity<Category>().HasData(...); ← FJERN
+    // modelBuilder.Entity<Pie>().HasData(...);      ← FJERN
+
+    // Behold kun entity configuration
+    modelBuilder.Entity<Pie>()...
+}
+```
+
+**Steg 3: Legg til DbInitializer i Program.cs**
+```csharp
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<BethanysPieShopDbContext>();
+    DbInitializer.Seed(context);
+}
+```
+
+**Steg 4: Opprett migrasjon for å fjerne seed-data**
+```bash
+dotnet ef migrations add RemoveSeedData
+dotnet ef database update
+```
+
+### Fordeler med DbInitializer-tilnærmingen
+
+| Aspekt | Migration-seeding | DbInitializer |
+|--------|------------------|---------------|
+| **Separasjon** | Schema + data blandet | Ren separasjon |
+| **Vedlikehold** | Krevende ved endringer | Enkelt å endre |
+| **Fleksibilitet** | Static ved build-time | Dynamic ved runtime |
+| **Testing** | Vanskelig å isolere | Kan kalles direkte |
+| **Foreign Keys** | MERGE-problemer | Natural EF workflow |
+| **Environment** | Samme for alle miljø | Conditional seeding mulig |
+| **Performance** | Rask (del av schema) | Noe tregere (runtime) |
+
+### Testresultat etter implementering
+
+```bash
+# Build
+Build succeeded.
+    2 Warning(s)  # File locking warnings - ikke kritiske
+    0 Error(s)
+
+# Tester
+Passed!  - Failed: 0, Passed: 56, Skipped: 0, Total: 56
+
+# Runtime
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:5110
+Application started successfully!
+```
+
+**✅ Verifisert funksjonalitet:**
+- Kompilerer uten feil
+- Alle 56 tester passerer
+- Applikasjon starter uten runtime-feil
+- Foreign key relationships fungerer perfekt
+- Seed-data seedes korrekt ved første oppstart
+- Duplikatsjekkingen fungerer (ingen re-seeding)
+
+### Når å bruke DbInitializer vs Migration-seeding
+
+**Bruk DbInitializer når:**
+- ✅ Utviklingsmiljø med hyppige data-endringer
+- ✅ Forskjellige seed-data per miljø (dev/test/prod)
+- ✅ Komplekse foreign key relationships
+- ✅ Dynamic seeding basert på business logic
+
+**Bruk Migration-seeding når:**
+- ✅ Static reference data som sjelden endres
+- ✅ Performance er kritisk (del av schema-opprettelse)
+- ✅ Data som er del av applikasjonens "schema"
+- ✅ Enklere deployment-pipeline
+
+**💡 Best practice:** Kombiner begge - migrations for reference data, DbInitializer for test/demo data.
+
+---
+
+**📍 Neste:** Vi har nå en robust database-løsning med både EF Core repository pattern og fleksibel data-seeding. Neste steg er å implementere shopping cart-funksjonalitet som kan lagres i database.
+
 **📍 Neste:** Vi fortsetter med shopping cart-funksjonalitet som nå kan lagres i database i stedet for session.
