@@ -396,3 +396,44 @@ Alle tester følger **Arrange-Act-Assert**:
 ---
 
 *Denne kjøreboken oppdateres fortløpende etter hvert som vi bygger Bethany's Pie Shop.*
+
+## GitHub — Koble prosjektet til GitHub
+
+### Installasjon og autentisering
+
+1. **Installer GitHub CLI** — `winget install --id GitHub.cli`
+2. **Autentiser** — `gh auth login`
+   - Følg instruksjonene i terminalvinduet
+   - Åpner en nettleser hvor du logger inn på GitHub
+   - Kopierer en engangskode fra terminalen
+
+### Opprette og koble repository
+
+```bash
+# 1. Opprett GitHub-repo
+gh repo create BethanysPieShop --public --description "ASP.NET Core MVC læringsprosjekt - Bethany's Pie Shop"
+
+# 2. Legg til remote origin
+git remote add origin https://github.com/kjellvaag/BethanysPieShop.git
+
+# 3. Konfigurer Git til å bruke GitHub CLI for autentisering
+gh auth setup-git
+
+# 4. Push lokale commits til GitHub
+git push -u origin main
+```
+
+### Hva skjedde?
+
+- **GitHub-repo opprettet** — Nå finnes prosjektet på https://github.com/kjellvaag/BethanysPieShop
+- **Remote origin lagt til** — Git vet nå hvor det skal pushe til
+- **Commits pushet** — Alle lokale commits (prosjektoppsett, `.gitignore`, etc.) er nå på GitHub
+- **Upstream tracking** — `git push -u origin main` setter `main`-branchen til å tracke `origin/main`
+
+| Git-kommando | Hva den gjør |
+|---|---|
+| `git remote add origin <URL>` | Kobler lokalt repo til GitHub-repo |
+| `git push -u origin main` | Pusher `main`-branch og setter upstream tracking |
+| `git push` | (fremover) Pusher til origin/main automatisk |
+
+---

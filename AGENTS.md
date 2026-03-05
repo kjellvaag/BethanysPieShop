@@ -41,10 +41,11 @@ Brukeren (kvage) er fersk i både .NET og Git og ønsker å lære underveis.
 
 ## GitHub
 
-Repo er IKKE koblet til GitHub ennå. Brukeren installerer `gh` CLI.
+✅ **Repo tilkoblet:** https://github.com/kjellvaag/BethanysPieShop
+- GitHub CLI installert og autentisert som `kjellvaag`
+- Alle lokale commits pushet til GitHub
+- `git push` vil nå automatisk pushe til origin/main
 
 ## Neste steg
 
-- Vent på at `gh auth login` er gjort
-- Opprett GitHub-repo og push
 - Start Fase 2: Domenemodell (Pie, Category), repository-mønster, TDD
