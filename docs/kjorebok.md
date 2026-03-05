@@ -434,3 +434,260 @@ git push -u origin main
 | `git push` | (fremover) Pusher til origin/main automatisk |
 
 ---
+
+
+## Domenemodeller og Repository-mønster
+
+### Hva er domenemodeller?
+
+Domenemodeller er C#-klasser som representerer de **viktige "tingene"** i applikasjonen din. 
+For Bethany's Pie Shop er de viktigste "tingene" paier og kategorier.
+
+Tenk på dem som **datamodeller** eller **entiteter** som beskriver:
+- Hvilke egenskaper (properties) en pie har
+- Hvordan paier og kategorier henger sammen
+- Regler for hvordan dataene skal se ut
+
+### Våre domenemodeller
+
+#### Category-modellen
+
+```csharp
+public class Category
+{
+    public int CategoryId { get; set; }
+    public string CategoryName { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public List<Pie>? Pies { get; set; }  // Navigation property
+}
+```
+
+| Property | Type | Forklaring |
+|---|---|---|
+| `CategoryId` | int | Unik ID for kategorien (primærnøkkel) |
+| `CategoryName` | string | Navnet på kategorien ("Fruit pies", "Cheese cakes") |
+| `Description` | string? | Valgfri beskrivelse av kategorien |
+| `Pies` | List<Pie>? | Alle paier som tilhører denne kategorien |
+
+#### Pie-modellen
+
+```csharp
+public class Pie
+{
+    public int PieId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? ShortDescription { get; set; }
+    public string? LongDescription { get; set; }
+    public string? AllergyInformation { get; set; }
+    public decimal Price { get; set; }
+    public string? ImageUrl { get; set; }
+    public string? ImageThumbnailUrl { get; set; }
+    public bool IsPieOfTheWeek { get; set; }
+    public bool InStock { get; set; }
+    public int CategoryId { get; set; }        // Foreign key
+    public Category Category { get; set; } = default!;  // Navigation property
+}
+```
+
+#### Navigation Properties (sammenhenger)
+
+- **`Category.Pies`** — En kategori kan ha mange paier (one-to-many)
+- **`Pie.Category`** — Hver pie tilhører én kategori 
+- **`Pie.CategoryId`** — Foreign key som kobler til `Category.CategoryId`
+
+```
+Category "Fruit pies" (CategoryId=1)
+    ├── Pie "Apple Pie" (CategoryId=1)
+    ├── Pie "Strawberry Pie" (CategoryId=1)
+    └── Pie "Rhubarb Pie" (CategoryId=1)
+
+Category "Cheese cakes" (CategoryId=2)
+    └── Pie "Cheese cake" (CategoryId=2)
+```
+
+---
+
+### Repository-mønster
+
+#### Hva er Repository-mønster?
+
+Repository-mønster skiller **forretningslogikk** fra **datakilden**:
+
+```
+Controller → Repository (interface) → Konkret implementasjon (Mock/Database)
+```
+
+**Fordeler:**
+- **Testbarhet** — Kan bytte ut databasen med mock-data i tester
+- **Fleksibilitet** — Kan bytte fra Mock → Entity Framework → Azure SQL uten å endre controllere
+- **Abstraksjon** — Controlleren bryr seg ikke om HVOR dataene kommer fra
+
+#### Våre repositories
+
+**ICategoryRepository** (grensesnittet):
+```csharp
+public interface ICategoryRepository
+{
+    IEnumerable<Category> AllCategories { get; }
+}
+```
+
+**IPieRepository** (grensesnittet):
+```csharp
+public interface IPieRepository
+{
+    IEnumerable<Pie> AllPies { get; }
+    IEnumerable<Pie> PiesOfTheWeek { get; }
+    Pie? GetPieById(int pieId);
+    IEnumerable<Pie> SearchPies(string searchQuery);
+}
+```
+
+#### Mock-implementasjoner
+
+I stedet for en ekte database bruker vi **Mock-implementasjoner** med hardkodede testdata:
+
+```csharp
+public class MockCategoryRepository : ICategoryRepository
+{
+    public IEnumerable<Category> AllCategories =>
+        new List<Category>
+        {
+            new Category{CategoryId=1, CategoryName="Fruit pies", Description="All-fruity pies"},
+            new Category{CategoryId=2, CategoryName="Cheese cakes", Description="Cheesy all the way"},
+            new Category{CategoryId=3, CategoryName="Seasonal pies", Description="Get in the mood for a seasonal pie"}
+        };
+}
+```
+
+**Hvorfor Mock først?**
+- Rask utvikling uten database-oppsett
+- Lettere testing
+- Kan fokusere på MVC-logikk før Entity Framework
+
+---
+
+### Dependency Injection
+
+#### Hva er Dependency Injection?
+
+I stedet for at en Controller lager sine egne avhengigheter:
+
+```csharp
+// ❌ Tight coupling - vanskelig å teste
+public class PieController : Controller
+{
+    private readonly IPieRepository _pieRepository;
+    
+    public PieController()
+    {
+        _pieRepository = new MockPieRepository(); // Hardkodet!
+    }
+}
+```
+
+**Ber** den ASP.NET Core om å gi dem det de trenger:
+
+```csharp
+// ✅ Dependency Injection - testbart og fleksibelt
+public class PieController : Controller
+{
+    private readonly IPieRepository _pieRepository;
+    
+    // Constructor Injection - ASP.NET gir oss repository automatisk
+    public PieController(IPieRepository pieRepository)
+    {
+        _pieRepository = pieRepository;
+    }
+}
+```
+
+#### Konfigurasjon i Program.cs
+
+```csharp
+using BethanysPieShop.Models;
+
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddControllersWithViews();
+
+// Registrer repositories i DI-container
+builder.Services.AddScoped<ICategoryRepository, MockCategoryRepository>();
+builder.Services.AddScoped<IPieRepository, MockPieRepository>();
+
+var app = builder.Build();
+```
+
+**`AddScoped`** betyr:
+- Én instans per HTTP-request
+- Samme instans deles mellom alle som trenger den i samme request
+- Nye instanser for hver nye request
+
+#### Magien
+
+1. **Registrering**: `builder.Services.AddScoped<Interface, Implementation>()`
+2. **Injeksjon**: Controller ber om `IPieRepository` i constructor
+3. **Oppløsning**: ASP.NET Core ser i DI-containeren: "Ah, `IPieRepository` → `MockPieRepository`"
+4. **Instansiering**: Lager `new MockPieRepository()` og gir til controlleren
+
+---
+
+### TDD for domenemodeller
+
+#### Vår TDD-tilnærming
+
+**Red-Green-Refactor** for hver komponent:
+
+1. **RED**: Skriv test for Category-modell → FEIL (ingen Category.cs ennå)
+2. **GREEN**: Lag Category.cs med minimum implementation → PASS
+3. **REFACTOR**: Forbedre koden uten å ødelegge tester
+4. Gjenta for Pie, repositories, osv.
+
+#### Eksempel: Testing av Category
+
+```csharp
+[Fact]
+public void Category_ShouldSetPropertiesCorrectly()
+{
+    // Arrange
+    var testId = 1;
+    var testName = "Test Category";
+    var testDescription = "Test Description";
+    
+    // Act
+    var category = new Category
+    {
+        CategoryId = testId,
+        CategoryName = testName,
+        Description = testDescription
+    };
+    
+    // Assert
+    Assert.Equal(testId, category.CategoryId);
+    Assert.Equal(testName, category.CategoryName);
+    Assert.Equal(testDescription, category.Description);
+}
+```
+
+#### Testdekning
+
+Vi har 28 tester som dekker:
+- **Modell-properties** — Kan vi sette og hente verdier?
+- **Repository-grensesnitt** — Implementerer Mock-klassene interface korrekt?
+- **Forretningslogikk** — PiesOfTheWeek returnerer kun paier med `IsPieOfTheWeek = true`?
+- **Søkefunksjonalitet** — SearchPies finner riktige paier?
+
+---
+
+### Neste steg
+
+Fra her kan vi:
+1. **Lage Controllers** som bruker repositories
+2. **Lage Views** for å vise pai-data
+3. **Bytte til Entity Framework** når vi vil ha ekte database
+4. **Legge til flere features** (shopping cart, checkout, etc.)
+
+Repository-mønsteret gjør overgangen smidig — vi bytter bare implementasjoner uten å endre Controllers!
+
+---
+
+*Oppdatert etter implementasjon av domenemodeller med TDD og repository-mønster.*
