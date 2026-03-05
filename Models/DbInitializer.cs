@@ -21,23 +21,6 @@ namespace BethanysPieShop.Models
             {
                 return; // Database er allerede seeded
             }
-        {
-            // Sørg for at databasen er opprettet
-            context.Database.EnsureCreated();
-
-            // Debug logging for å se hva som skjer
-            var categoryCount = context.Categories.Count();
-            var pieCount = context.Pies.Count();
-            Console.WriteLine($"DbInitializer: Categories={categoryCount}, Pies={pieCount}");
-
-            // Sjekk om vi allerede har data (unngå duplikater)
-            if (context.Categories.Any())
-            {
-                Console.WriteLine("DbInitializer: Database already seeded, skipping...");
-                return; // Database er allerede seeded
-            }
-
-            Console.WriteLine("DbInitializer: Starting seeding process...");
 
             // Seed kategorier
             var fruitPiesCategory = new Category 
@@ -126,10 +109,6 @@ namespace BethanysPieShop.Models
 
             context.Pies.AddRange(pies);
             context.SaveChanges();
-        }
-            context.SaveChanges();
-            
-            Console.WriteLine($"DbInitializer: Seeded {context.Categories.Count()} categories and {context.Pies.Count()} pies");
         }
     }
 }
