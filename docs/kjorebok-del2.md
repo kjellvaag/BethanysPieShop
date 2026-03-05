@@ -535,3 +535,43 @@ Du har nå lært:
 **Neste:** [Del 3 - Test-Driven Development](kjorebok-del3.md)
 
 [← Tilbake til hovedoversikt](kjorebok.md)
+## Ferdigstilt i denne sesjonen 🎉
+
+Vi implementerte **komplett routing og navigation** for Bethany's Pie Shop:
+
+### 🛠️ Hva ble bygget:
+
+1. **PieController** med to actions:
+   - `List()` — viser alle pies i card-layout
+   - `Details(int id)` — viser detaljer for én pie
+
+2. **PieListViewModel** — kombinerer:
+   - `IEnumerable<Pie> Pies` — pie-listen
+   - `string CurrentCategory` — kategorinavn
+
+3. **Views med Bootstrap:**
+   - `Views/Pie/List.cshtml` — responsivt card grid
+   - `Views/Pie/Details.cshtml` — detaljvisning + "Back to List" knapp
+
+4. **Navigation:**
+   - Navbar: "Pies" link til `/Pie/List`
+   - Home page: pie cards linker til `/Pie/Details/{id}`
+   - List page: pie cards linker til `/Pie/Details/{id}`
+   - Details page: "Back to Pies" knapp
+
+### 🚀 Routing som fungerer:
+
+| URL | Controller | Action | Parameter |
+|-----|------------|--------|-----------|
+| `/Pie/List` | Pie | List | - |
+| `/Pie/Details/1` | Pie | Details | id=1 |
+| `/Pie/Details/999` | Pie | Details | 404 Not Found |
+
+### ✅ Test-driven utvikling:
+- Alle 56 tester passerer
+- PieController har 6 dedikerte tester
+- TDD Red-Green-Refactor syklus fulgt
+
+---
+
+[← Tilbake til hovedoversikt](kjorebok.md)

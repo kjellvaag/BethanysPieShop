@@ -4,6 +4,10 @@
     @Model.Name
 </h3>
 
+<div class="mb-3">
+    <a asp-controller="Pie" asp-action="List" class="btn btn-secondary">← Back to Pies</a>
+</div>
+
 <div class="row gx-5">
     <img alt="@Model.Name" src="@Model.ImageUrl" class="img-fluid col-5" />
     <div class="col-7">

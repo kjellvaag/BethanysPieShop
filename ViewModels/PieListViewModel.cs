@@ -4,7 +4,13 @@ namespace BethanysPieShop.ViewModels
 {
     public class PieListViewModel
     {
-        public IEnumerable<Pie> Pies { get; set; } = new List<Pie>();
-        public string CurrentCategory { get; set; } = string.Empty;
+        public IEnumerable<Pie> Pies { get; }
+        public string? CurrentCategory { get; }
+
+        public PieListViewModel(IEnumerable<Pie> pies, string? currentCategory)
+        {
+            Pies = pies;
+            CurrentCategory = currentCategory;
+        }
     }
 }
