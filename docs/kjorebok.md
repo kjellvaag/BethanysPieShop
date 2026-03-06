@@ -125,10 +125,9 @@ context.Pies.AddRange(/* 16 pies fra modul 06 */);
 7. **Database**: 16 pies og 3 kategorier korrekt seeded med synlig migrasjonshistorikk
 8. **CategoryId Fix**: Dictionary-referanser erstattet med lokale category-variabler
 9. **Bootstrap Carousel Fix**: Fikset manglende Bootstrap CSS som hindret carousel fra å vise bilder
-10. **Testing**: Alle 56 tester består konsistent
-11. **Dokumentasjon**: Kjørebok oppdatert med fullstendige detaljer
-9. **Testing**: Alle 56 tester består konsistent
-10. **Dokumentasjon**: Kjørebok oppdatert med fullstendige detaljer
+10. **Partial Views Refactor**: Ekstrahert gjenbrukbare partials for carousel og pie cards
+11. **Testing**: Alle 56 tester består konsistent
+12. **Dokumentasjon**: Kjørebok oppdatert med fullstendige detaljer
 
 ### Tekniske detaljer
 - **16 pies** across 3 categories: Fruit pies, Cheese cakes, Seasonal pies
@@ -138,9 +137,27 @@ context.Pies.AddRange(/* 16 pies fra modul 06 */);
 - **Migrations**: `InitialCreate`, `RemoveSeedData` anvendt
 - **CategoryIds**: 4 (Fruit pies), 5 (Cheese cakes), 6 (Seasonal pies)
 
+### Partial Views implementasjon
+**Opprettet gjenbrukbare komponenter:**
+- `Views/Shared/_Carousel.cshtml`: Bootstrap carousel komponent for hjemmesiden
+- `Views/Shared/_PieCard.cshtml`: Konsistent pie card display for både hjemmeside og liste
+
+**Refaktorerte views:**
+- `Views/Home/Index.cshtml`: Erstattet 32 linjer carousel HTML med `<partial name="_Carousel" />`
+- `Views/Pie/List.cshtml`: Erstattet duplikert pie card HTML med `<partial name="_PieCard" model="pie" />`
+
+**Fordeler med partial views:**
+- **DRY principle**: Eliminerer duplisert HTML-kode
+- **Maintainability**: Endringer i design krever kun oppdatering av en fil
+- **Consistency**: Sikrer konsistent styling på tvers av sider
+- **Reusability**: Partials kan gjenbrukes i andre views ved behov
+
 ### Neste steg
 Nå er prosjektet klart for **Fase 6: Shopping cart** fra kursets neste modul.
+
+### Læringspunkter fra denne fasen
 - **Entity Framework seed strategier**: `EnsureCreated()` vs `RemoveRange()`
 - **SQL Server LocalDB**: Ikke .db filer, men `(localdb)\mssqllocaldb`
 - **Dictionary pattern** for kategorireferanser i seed data
 - **MERGE statements**: EF Core genererer effektive bulk inserts
+- **Partial Views**: Kraftig verktøy for å dele HTML-komponenter mellom views
