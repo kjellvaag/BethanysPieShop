@@ -124,6 +124,9 @@ context.Pies.AddRange(/* 16 pies fra modul 06 */);
 6. **Migration System**: Endret fra `EnsureCreated()` til `Migrate()` for riktig migrasjonshistorikk
 7. **Database**: 16 pies og 3 kategorier korrekt seeded med synlig migrasjonshistorikk
 8. **CategoryId Fix**: Dictionary-referanser erstattet med lokale category-variabler
+9. **Bootstrap Carousel Fix**: Fikset manglende Bootstrap CSS som hindret carousel fra å vise bilder
+10. **Testing**: Alle 56 tester består konsistent
+11. **Dokumentasjon**: Kjørebok oppdatert med fullstendige detaljer
 9. **Testing**: Alle 56 tester består konsistent
 10. **Dokumentasjon**: Kjørebok oppdatert med fullstendige detaljer
 
