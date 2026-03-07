@@ -246,3 +246,98 @@ httpContext.Session = session;
 ### Neste steg
 
 Nå er grunnlaget lagt for **Fase 7: Shopping Cart Operations** - implementering av `AddToCart`, `RemoveFromCart`, og `GetShoppingCartItems` metodene.
+
+---
+
+## ✅ Fase 7: Shopping Cart Operations **FULLFØRT**
+
+**Mål**: Implementere og teste `AddToCart`, `RemoveFromCart`, `ClearCart` og `GetShoppingCartTotal`.
+
+### Oppnådd
+
+1. **ShoppingCart metoder implementert**:
+   - `AddToCart(Pie pie)` — legger til ny pie eller øker `Amount` på eksisterende
+   - `RemoveFromCart(Pie pie)` — reduserer `Amount`, sletter item hvis Amount = 0
+   - `ClearCart()` — fjerner alle items for gjeldende `ShoppingCartId` med `RemoveRange()`
+   - `GetShoppingCartTotal()` — summerer `Pie.Price * Amount` for alle items
+
+2. **Kritisk buggfix — PieId vs Pie.PieId**:
+   - `AddToCart` og `RemoveFromCart` brukte `s.Pie.PieId` (navigation property) i LINQ
+   - Med InMemory-database er navigation properties **ikke** automatisk lastet → `NullReferenceException`
+   - Fikset til `s.PieId` (direkte foreign key kolonne) — fungerer alltid
+
+3. **EF Core-migrering**:
+   - La til `AddPieIdToShoppingCartItem`-migrering for å sikre `PieId` er en ekte foreign key-kolonne
+
+4. **Test Coverage (77 tester)**:
+   - `GetShoppingCartTotal` — 3 tester: tom kurv, enkelt item, flere items
+   - `AddToCart` / `RemoveFromCart` — dekket med eksisterende tester
+   - Rettet syntaksfeil i `ShoppingCartTests.cs` (duplikat-kode utenfor klassen)
+
+### Teknisk løsning
+```csharp
+// FEIL — krasjer med InMemory-database:
+var cartItem = _appDbContext.ShoppingCartItems
+    .FirstOrDefault(s => s.Pie.PieId == pie.PieId ...);  // NullReferenceException!
+
+// RIKTIG — bruk direkte foreign key:
+var cartItem = _appDbContext.ShoppingCartItems
+    .FirstOrDefault(s => s.PieId == pie.PieId ...);  // Fungerer alltid
+
+// ClearCart:
+var cartItems = _appDbContext.ShoppingCartItems
+    .Where(s => s.ShoppingCartId == ShoppingCartId);
+_appDbContext.ShoppingCartItems.RemoveRange(cartItems);
+_appDbContext.SaveChanges();
+
+// GetShoppingCartTotal:
+return _appDbContext.ShoppingCartItems
+    .Where(s => s.ShoppingCartId == ShoppingCartId)
+    .Select(s => s.Pie!.Price * s.Amount)
+    .Sum();
+```
+
+### Prosjektopprydding
+- `MockPieRepository` og `MockCategoryRepository` **flyttet** fra `Models/` → `Tests/`
+  - Produksjonskode-mappen `Models/` skal ikke inneholde test-hjelpere
+  - Namespace endret fra `BethanysPieShop.Models` → `BethanysPieShop.Tests`
+- `Tests/UnitTest1.cs` (tom boilerplate) **slettet**
+- Lokal `.opencode/oh-my-opencode.json` **slettet** (identisk med global konfig)
+
+### Testdekning for HomeController
+La til `HomeControllerTests` med 4 tester:
+
+| Test | Verifiserer |
+|------|-------------|
+| `Index_ShouldReturnViewResult` | `Index()` returnerer `ViewResult` |
+| `Index_ShouldReturnViewWithHomeViewModel` | Modellen er av type `HomeViewModel` |
+| `Index_ShouldOnlyContainPiesOfTheWeek` | Kun pies med `IsPieOfTheWeek == true` |
+| `Index_PiesOfTheWeekShouldMatchRepository` | Antall matcher repository |
+
+### Læringspunkter
+
+1. **Navigation properties i InMemory-database**:
+   - EF Core InMemory laster **ikke** navigation properties automatisk (ingen JOIN)
+   - Alltid bruk direkte foreign key (`PieId`) i LINQ-spørringer mot InMemory
+   - I produksjon med SQL Server: bruk `.Include()` for eager loading
+
+2. **Test-klasser hører hjemme i testprosjektet**:
+   - Mock-klasser er test-infrastruktur, ikke domenemodeller
+   - Feil namespace gir forvirrende avhengigheter
+
+3. **HomeController TDD i ettertid**:
+   - Koden var allerede implementert → testene ble grønne med én gang
+   - Likevel verdifullt: dokumenterer forventet adferd, fanger fremtidige regresjoner
+
+### Status
+- ✅ **77/77 tester grønne**
+- ✅ Commit `e9f69d3` pushet til GitHub
+
+---
+
+## 🚀 Neste steg: Fase 8 — Shopping Cart Controller og View
+
+Grunnlaget er lagt. Neste naturlige steg:
+- `ShoppingCartController` med `AddToShoppingCart`, `Index`, `RemoveFromShoppingCart`
+- `Views/ShoppingCart/Index.cshtml` — vis innholdet i handlekurven
+- TDD: skriv testene først (Red), deretter implementer (Green)
