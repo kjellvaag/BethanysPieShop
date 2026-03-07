@@ -161,3 +161,88 @@ Nå er prosjektet klart for **Fase 6: Shopping cart** fra kursets neste modul.
 - **Dictionary pattern** for kategorireferanser i seed data
 - **MERGE statements**: EF Core genererer effektive bulk inserts
 - **Partial Views**: Kraftig verktøy for å dele HTML-komponenter mellom views
+
+## ✅ Fase 6: ShoppingCart med Kompleks Session-Testing **FULLFØRT**
+
+**Mål**: Implementere ShoppingCart modell med avansert session-basert testing.
+
+### Oppnådd
+
+1. **ShoppingCart Infrastructure**:
+   - `IShoppingCart` interface med metoder for handlekurv-operasjoner
+   - `ShoppingCart` klasse med session-basert cart ID håndtering
+   - `ShoppingCartItem` modell for kobling til pies og quantities
+
+2. **Database Integration**:
+   - EF Core migration for `ShoppingCartItems` tabell
+   - Oppdatert `BethanysPieShopDbContext` med `ShoppingCartItems` DbSet
+   - Relasjon mellom `ShoppingCartItem` og `Pie` modeller
+
+3. **Kompleks Session Testing**:
+   - Async test med `DistributedSession` oppsett
+   - `HttpContext` og `HttpContextAccessor` konfigurasjon
+   - Service provider med session support og in-memory cache
+   - Verifisering av session-basert CartId konsistens
+
+4. **Test Coverage**:
+   - Interface implementasjon validering
+   - Property initialisering tester
+   - Session-basert cart ID persistering
+   - Alle 61 tester består konsistent
+
+### Tekniske detaljer
+
+**Session Management:**
+```csharp
+// ShoppingCart.GetCart() bruker session for persistent cart ID
+ISession? session = services.GetRequiredService<IHttpContextAccessor>()?
+    .HttpContext?.Session;
+string cartId = session?.GetString("CartId") ?? Guid.NewGuid().ToString();
+session?.SetString("CartId", cartId);
+```
+
+**Test Oppsett:**
+```csharp
+// Kompleks session testing setup
+services.AddDbContext<BethanysPieShopDbContext>();
+services.AddDistributedMemoryCache();
+services.AddLogging();
+services.AddSession();
+services.AddHttpContextAccessor();
+
+// DistributedSession med async loading
+var session = new DistributedSession(distributedCache, sessionKey, ...);
+await session.LoadAsync(CancellationToken.None);
+httpContext.Session = session;
+```
+
+**Database Schema:**
+- `ShoppingCartItems` tabell med `ShoppingCartId`, `PieId`, `Amount`
+- Foreign key relasjon til `Pies` tabell
+- Støtter multiple items per cart
+
+### Læringspunkter
+
+1. **ASP.NET Core Session System**:
+   - `DistributedSession` for testbar session håndtering
+   - `IHttpContextAccessor` for tilgang til HttpContext i services
+   - Service registration rekkefølge er kritisk
+
+2. **Async Testing Patterns**:
+   - `session.LoadAsync()` krever async test metoder
+   - CancellationToken håndtering i tester
+   - Service provider lifecycle management
+
+3. **Entity Framework Relations**:
+   - Navigation properties mellom ShoppingCartItem og Pie
+   - DbSet registrering i DbContext
+   - Migration generering for nye entiteter
+
+4. **Test-Driven Development**:
+   - Red/Green/Refactor syklus for session testing
+   - Complex mock setup for ASP.NET Core services
+   - Verification av både object state og session persistence
+
+### Neste steg
+
+Nå er grunnlaget lagt for **Fase 7: Shopping Cart Operations** - implementering av `AddToCart`, `RemoveFromCart`, og `GetShoppingCartItems` metodene.

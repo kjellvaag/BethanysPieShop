@@ -1,4 +1,6 @@
-namespace BethanysPieShop.Models
+using BethanysPieShop.Models;
+
+namespace BethanysPieShop.Tests
 {
     public class MockCategoryRepository : ICategoryRepository
     {
