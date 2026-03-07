@@ -37,6 +37,13 @@ namespace BethanysPieShop.Tests
         }
 
         [Fact]
+        public void DbContext_ShouldHaveShoppingCartItemsDbSet()
+        {
+            // Assert
+            Assert.NotNull(_context.ShoppingCartItems);
+        }
+
+        [Fact]
         public void DbContext_ShouldSavePieWithCategory()
         {
             // Arrange
@@ -58,6 +65,34 @@ namespace BethanysPieShop.Tests
             Assert.True(category.CategoryId > 0); // Should have generated ID
             Assert.True(pie.PieId > 0); // Should have generated ID
             Assert.Equal(category.CategoryId, pie.CategoryId); // Foreign key should be set
+        }
+
+        [Fact]
+        public void DbContext_ShouldSaveShoppingCartItemWithPie()
+        {
+            // Arrange
+            var category = new Category { CategoryName = "Test Category" };
+            var pie = new Pie
+            {
+                Name = "Test Pie",
+                Price = 10.99m,
+                Category = category
+            };
+            var cartItem = new ShoppingCartItem
+            {
+                Pie = pie,
+                Amount = 2,
+                ShoppingCartId = "TestCart"
+            };
+            // Act
+            _context.Categories.Add(category);
+            _context.Pies.Add(pie);
+            _context.ShoppingCartItems.Add(cartItem);
+            var result = _context.SaveChanges();
+            // Assert
+            Assert.Equal(3, result); // Should save 3 entities
+            Assert.True(cartItem.ShoppingCartItemId > 0); // Should have generated ID
+            Assert.Equal(pie.PieId, cartItem.Pie.PieId); // Should be linked to the correct pie
         }
 
         [Fact]
